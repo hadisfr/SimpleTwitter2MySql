@@ -12,23 +12,24 @@ import time
 from userpass import *
 db_name = "tweet_mine"
 db_host = "localhost"
-filtered_words = ["basketball", "tweet"]
+filtered_words = []
 
 tweets_table_name = "tweets"
 users_table_name = "users"
 
-counter = 0;
+encoding = "utf8mb4"
+DATABASE_NOT_FOUND = 1049
 
 def open_database(cursor):
 	try:
-		cursor.execute('SET NAMES utf8mb4')
-		cursor.execute('SET CHARACTER SET utf8mb4')
-		cursor.execute('SET character_set_connection=utf8mb4')
+		cursor.execute('SET NAMES ' + encoding)
+		cursor.execute('SET CHARACTER SET ' + encoding)
+		cursor.execute('SET character_set_connection=' + encoding)
 		cursor.execute("use " + db_name + ";")
 	except MySQLdb.OperationalError as ex:
-		if ex.args[0] == 1049:
+		if ex.args[0] == DATABASE_NOT_FOUND:
 			print("creating database " + db_name, file = sys.stderr)
-			cursor.execute("create database " + db_name + " character set UTF8MB4;")
+			cursor.execute("create database " + db_name + " character set " + encoding + ";")
 			cursor.execute("use " + db_name + ";")
 		else:
 			raise
@@ -86,20 +87,10 @@ class StreamListener(tweepy.StreamListener):
 		print("disconnected.", file = sys.stderr)
 
 	def on_status(self, status):
-		global counter
-		counter += 1
-		print(counter)
 		try:
 			text = status.extended_tweet["full_text"]
 		except AttributeError:
 			text = status.text
-		text = text.replace("\'", "").replace("\"", "")
-		# print("\n%s :\t%s" % (status._json["user"]["name"], text))
-		# try:
-		# 	text = status.extended_tweet._json
-		# except AttributeError:
-		# 	text = status._json
-		# print(json.dumps(text, indent = 4, ensure_ascii=False))
 		jo = status._json
 		u = jo["user"]
 		user_id = (u["id"],)
